@@ -1,29 +1,17 @@
 import { useState, useEffect } from "react";
 import api from "./api";
+import { fmtINR, fmtDateTime } from "./format";
 
-const CATEGORIES = [
-  "Food",
-  "Travel",
-  "Medical",
-  "Shopping",
-  "Entertainment",
-  "Bills",
-  "Other",
-];
-
-function GroupDetail({ group, onBack }) {
+function GroupDetail({ group, onBack, reloadKey }) {
   const [expenses, setExpenses] = useState([]);
   const [balances, setBalances] = useState({});
   const [settlements, setSettlements] = useState([]);
-  const [amount, setAmount] = useState("");
-  const [paidBy, setPaidBy] = useState("");
-  const [category, setCategory] = useState("");
-  const [note, setNote] = useState("");
+  const [deleteError, setDeleteError] = useState("");
 
   useEffect(() => {
     fetchGroupExpenses();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [reloadKey]);
 
   async function fetchGroupExpenses() {
     const res = await api.get(`/group-expenses/${group._id}`);
@@ -32,20 +20,16 @@ function GroupDetail({ group, onBack }) {
     setSettlements(res.data.settlements);
   };
 
-  const handleAddExpense = async (e) => {
-    e.preventDefault();
-    await api.post(`/group-expenses/${group._id}`, {
-      amount: Number(amount),
-      paidBy,
-      category,
-      note,
-      splitBetween: group.members,
-    });
-    setAmount("");
-    setPaidBy("");
-    setCategory("");
-    setNote("");
-    fetchGroupExpenses();
+  const handleDelete = async (expenseId) => {
+    try {
+      setDeleteError("");
+      await api.delete(`/group-expenses/${group._id}/${expenseId}`);
+      fetchGroupExpenses();
+    } catch {
+      setDeleteError(
+        "Couldn't delete this expense. If it keeps failing, the server may need an update.",
+      );
+    }
   };
 
   return (
@@ -67,62 +51,9 @@ function GroupDetail({ group, onBack }) {
 
       <section className="section">
         <div className="section-head">
-          <h2 className="display-sm">Add an expense</h2>
-        </div>
-        <form onSubmit={handleAddExpense} className="card form-grid">
-          <input
-            type="number"
-            min="0"
-            step="0.01"
-            placeholder="Amount"
-            className="text-input"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            required
-          />
-          <select
-            className="text-input"
-            value={paidBy}
-            onChange={(e) => setPaidBy(e.target.value)}
-            required
-          >
-            <option value="">Who paid?</option>
-            {group.members.map((m) => (
-              <option key={m} value={m}>
-                {m}
-              </option>
-            ))}
-          </select>
-          <select
-            className="text-input"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            required
-          >
-            <option value="">Category</option>
-            {CATEGORIES.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
-          <input
-            type="text"
-            placeholder="Note (optional)"
-            className="text-input"
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-          />
-          <button type="submit" className="btn btn-primary">
-            Add expense
-          </button>
-        </form>
-      </section>
-
-      <section className="section">
-        <div className="section-head">
           <h2 className="display-sm">Expenses</h2>
         </div>
+        {deleteError && <p className="error-text">{deleteError}</p>}
         {expenses.length === 0 ? (
           <div className="empty-state">
             <h3>No expenses yet</h3>
@@ -134,14 +65,38 @@ function GroupDetail({ group, onBack }) {
               {expenses.map((exp) => (
                 <li key={exp._id} className="expense-item">
                   <span className="expense-category">{exp.category}</span>
-                  <span className="expense-note">
-                    {exp.note
-                      ? `${exp.note} · paid by ${exp.paidBy}`
-                      : `paid by ${exp.paidBy}`}
-                  </span>
-                  <span className="expense-amount">
-                    {"₹" + Number(exp.amount).toLocaleString("en-IN")}
-                  </span>
+                  <div className="expense-mid">
+                    <span className="expense-note">
+                      {exp.note
+                        ? `${exp.note} · paid by ${exp.paidBy}`
+                        : `paid by ${exp.paidBy}`}
+                    </span>
+                    <span className="expense-date">
+                      {fmtDateTime(exp.createdAt)}
+                    </span>
+                  </div>
+                  <span className="expense-amount">{fmtINR(exp.amount)}</span>
+                  <button
+                    type="button"
+                    className="expense-delete"
+                    aria-label={`Delete ${exp.note || "expense"}`}
+                    onClick={() => handleDelete(exp._id)}
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M3 6h18" />
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                      <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                    </svg>
+                  </button>
                 </li>
               ))}
             </ul>

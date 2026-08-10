@@ -60,12 +60,27 @@ function calculateSettlements(balances) {
   return settlements;
 }
 
+// DELETE a group expense by id
+router.delete("/:groupId/:expenseId", async (req, res) => {
+  try {
+    const deletedExpense = await GroupExpense.findByIdAndDelete(
+      req.params.expenseId,
+    );
+    if (!deletedExpense) {
+      return res.status(404).json({ error: "Expense not found" });
+    }
+    res.json({ message: "Expense deleted" });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
 // GET all expenses for a group, with balance calculation
 router.get("/:groupId", async (req, res) => {
   try {
     const expenses = await GroupExpense.find({
       groupId: req.params.groupId,
-    }).sort({ date: -1 });
+    }).sort({ createdAt: -1 });
 
     const balances = {};
 

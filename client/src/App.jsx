@@ -6,6 +6,10 @@ import "./App.css";
 import Groups from "./Groups";
 import GroupDetail from "./GroupDetail";
 import SpendingChart from "./SpendingChart";
+import AddExpenseModal from "./AddExpenseModal";
+import CreateGroupModal from "./CreateGroupModal";
+import GroupExpenseModal from "./GroupExpenseModal";
+import { fmtINR, fmtDateTime } from "./format";
 
 const CATEGORIES = [
   "Food",
@@ -17,18 +21,17 @@ const CATEGORIES = [
   "Other",
 ];
 
-const fmtINR = (n) => "₹" + Number(n).toLocaleString("en-IN");
-
 function App() {
   const [user, setUser] = useState(null);
   const [expenses, setExpenses] = useState([]);
-  const [amount, setAmount] = useState("");
-  const [category, setCategory] = useState("");
-  const [note, setNote] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
   const [view, setView] = useState("expenses");
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [scrolled, setScrolled] = useState(false);
+  const [modalType, setModalType] = useState(null);
+  const [groupsReload, setGroupsReload] = useState(0);
+  const [groupDetailReload, setGroupDetailReload] = useState(0);
+  const [deleteError, setDeleteError] = useState("");
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -56,23 +59,44 @@ function App() {
     setExpenses(res.data);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    await api.post("/expenses", {
-      amount: Number(amount),
-      category,
-      note,
-      userId: user.id,
-    });
-    setAmount("");
-    setCategory("");
-    setNote("");
-    fetchExpenses();
-  };
-
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setUser(null);
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      setDeleteError("");
+      await api.delete(`/expenses/${id}`);
+      fetchExpenses();
+    } catch {
+      setDeleteError(
+        "Couldn't delete this expense. If it keeps failing, the server may need an update.",
+      );
+    }
+  };
+
+  const handleModalSubmit = async (payload) => {
+    await api.post("/expenses", { ...payload, userId: user.id });
+    fetchExpenses();
+  };
+
+  const handleCreateGroup = async (payload) => {
+    await api.post("/groups", { ...payload, createdBy: user.id });
+    setGroupsReload((n) => n + 1);
+  };
+
+  const handleGroupExpenseSubmit = async (payload) => {
+    await api.post(`/group-expenses/${selectedGroup._id}`, payload);
+    setGroupDetailReload((n) => n + 1);
+  };
+
+  const openAddModal = () => {
+    if (view === "groups") {
+      setModalType(selectedGroup ? "groupExpense" : "createGroup");
+    } else {
+      setModalType("expense");
+    }
   };
 
   if (!user) {
@@ -116,6 +140,24 @@ function App() {
           </button>
           <button
             type="button"
+            className="tab-add"
+            aria-label="Add an expense"
+            onClick={openAddModal}
+          >
+            <svg
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+            >
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+          </button>
+          <button
+            type="button"
             role="tab"
             aria-selected={view === "groups"}
             className={`tab ${view === "groups" ? "active" : ""}`}
@@ -140,11 +182,13 @@ function App() {
             <GroupDetail
               group={selectedGroup}
               onBack={() => setSelectedGroup(null)}
+              reloadKey={groupDetailReload}
             />
           ) : (
             <Groups
               user={user}
               onSelectGroup={(group) => setSelectedGroup(group)}
+              reloadKey={groupsReload}
             />
           )
         ) : (
@@ -181,49 +225,9 @@ function App() {
 
             <section className="section">
               <div className="section-head">
-                <h2 className="display-sm">Add an expense</h2>
-              </div>
-              <form onSubmit={handleSubmit} className="card form-grid">
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="Amount"
-                  className="text-input"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  required
-                />
-                <select
-                  className="text-input"
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  required
-                >
-                  <option value="">Select category</option>
-                  {CATEGORIES.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  type="text"
-                  placeholder="Note (optional)"
-                  className="text-input full"
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                />
-                <button type="submit" className="btn btn-primary">
-                  Add expense
-                </button>
-              </form>
-            </section>
-
-            <section className="section">
-              <div className="section-head">
                 <h2 className="display-sm">Recent expenses</h2>
               </div>
+              {deleteError && <p className="error-text">{deleteError}</p>}
               <div className="chip-row" aria-label="Filter by category">
                 <button
                   type="button"
@@ -256,12 +260,38 @@ function App() {
                     {expenses.map((exp) => (
                       <li key={exp._id} className="expense-item">
                         <span className="expense-category">{exp.category}</span>
-                        <span className="expense-note">
-                          {exp.note || "Expense"}
-                        </span>
+                        <div className="expense-mid">
+                          <span className="expense-note">
+                            {exp.note || "Expense"}
+                          </span>
+                          <span className="expense-date">
+                            {fmtDateTime(exp.date)}
+                          </span>
+                        </div>
                         <span className="expense-amount">
                           {fmtINR(exp.amount)}
                         </span>
+                        <button
+                          type="button"
+                          className="expense-delete"
+                          aria-label={`Delete ${exp.note || "expense"}`}
+                          onClick={() => handleDelete(exp._id)}
+                        >
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M3 6h18" />
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                            <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                          </svg>
+                        </button>
                       </li>
                     ))}
                   </ul>
@@ -309,6 +339,42 @@ function App() {
           </div>
         </div>
       </footer>
+
+      <button
+        type="button"
+        className="fab-add"
+        aria-label="Add"
+        onClick={openAddModal}
+      >
+        <svg
+          width="26"
+          height="26"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+        >
+          <path d="M12 5v14M5 12h14" />
+        </svg>
+      </button>
+
+      <AddExpenseModal
+        open={modalType === "expense"}
+        onSubmit={handleModalSubmit}
+        onClose={() => setModalType(null)}
+      />
+      <CreateGroupModal
+        open={modalType === "createGroup"}
+        onSubmit={handleCreateGroup}
+        onClose={() => setModalType(null)}
+      />
+      <GroupExpenseModal
+        open={modalType === "groupExpense"}
+        group={selectedGroup}
+        onSubmit={handleGroupExpenseSubmit}
+        onClose={() => setModalType(null)}
+      />
     </div>
   );
 }

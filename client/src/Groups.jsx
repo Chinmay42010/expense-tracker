@@ -1,38 +1,14 @@
 import { useState, useEffect } from "react";
 import api from "./api";
+import { fmtDateTime } from "./format";
 
-function Groups({ user, onSelectGroup }) {
+function Groups({ user, onSelectGroup, reloadKey }) {
   const [groups, setGroups] = useState([]);
-  const [name, setName] = useState("");
-  const [membersInput, setMembersInput] = useState("");
 
   useEffect(() => {
-    fetchGroups();
+    api.get(`/groups?userId=${user.id}`).then((res) => setGroups(res.data));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  async function fetchGroups() {
-    const res = await api.get(`/groups?userId=${user.id}`);
-    setGroups(res.data);
-  };
-
-  const handleCreateGroup = async (e) => {
-    e.preventDefault();
-    const members = membersInput
-      .split(",")
-      .map((m) => m.trim())
-      .filter(Boolean);
-
-    await api.post("/groups", {
-      name,
-      members,
-      createdBy: user.id,
-    });
-
-    setName("");
-    setMembersInput("");
-    fetchGroups();
-  };
+  }, [reloadKey]);
 
   return (
     <>
@@ -41,33 +17,6 @@ function Groups({ user, onSelectGroup }) {
         <p className="hero-sub">
           Create groups, track shared spending, and settle up.
         </p>
-      </section>
-
-      <section className="section">
-        <div className="section-head">
-          <h2 className="display-sm">Create a group</h2>
-        </div>
-        <form onSubmit={handleCreateGroup} className="card form-grid">
-          <input
-            type="text"
-            placeholder="Group name"
-            className="text-input"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-          />
-          <input
-            type="text"
-            placeholder="Members — comma separated, e.g. Rahul, Priya"
-            className="text-input full"
-            value={membersInput}
-            onChange={(e) => setMembersInput(e.target.value)}
-            required
-          />
-          <button type="submit" className="btn btn-primary">
-            Create group
-          </button>
-        </form>
       </section>
 
       <section className="section">
@@ -101,6 +50,9 @@ function Groups({ user, onSelectGroup }) {
                     </span>
                   ))}
                 </div>
+                <p className="group-created">
+                  Created {fmtDateTime(group.createdAt)}
+                </p>
               </button>
             ))}
           </div>
