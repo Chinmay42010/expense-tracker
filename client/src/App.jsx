@@ -196,7 +196,7 @@ function App() {
             <section className="hero-band">
               <h1 className="display-xl">Your money, at a glance</h1>
               <p className="hero-sub">
-                Everything you've tracked, in one place.
+                Everything you've spent, in one place.
               </p>
               <div className="stat-row stagger">
                 <div className="stat-card stat-card-dark">
