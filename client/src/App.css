@@ -504,21 +504,102 @@
   background: var(--color-canvas);
 }
 
-select.text-input {
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  cursor: pointer;
-  color-scheme: light;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235e5e5e' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 16px center;
-  background-size: 16px 16px;
-  padding-right: 44px;
+.select-wrap {
+  position: relative;
 }
 
-select.text-input:focus {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23000000' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+.select-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  background: var(--color-canvas-soft);
+  color: var(--color-ink);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 24px;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 200ms var(--ease-out),
+    background-color 200ms var(--ease-out);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.select-trigger.open,
+.select-trigger:focus-visible {
+  outline: none;
+  border-color: var(--color-ink);
+  background: var(--color-canvas);
+}
+
+.select-placeholder {
+  color: var(--color-mute);
+}
+
+.select-chevron {
+  flex-shrink: 0;
+  color: var(--color-body);
+  transition: transform 200ms var(--ease-out);
+}
+
+.select-trigger.open .select-chevron {
+  transform: rotate(180deg);
+}
+
+.select-popover {
+  position: absolute;
+  top: calc(100% + var(--space-xs));
+  left: 0;
+  right: 0;
+  z-index: 70;
+  list-style: none;
+  margin: 0;
+  padding: var(--space-xs);
+  background: var(--color-canvas);
+  border: 1px solid var(--color-surface-pressed);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-l2);
+  max-height: 264px;
+  overflow-y: auto;
+  animation: fade-up 180ms var(--ease-out) backwards;
+}
+
+.select-option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  border: none;
+  background: transparent;
+  color: var(--color-ink);
+  border-radius: var(--radius-sm, 6px);
+  padding: var(--space-md) var(--space-lg);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 24px;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.select-option:hover {
+  background: var(--color-canvas-soft);
+}
+
+.select-option.selected {
+  font-weight: 600;
+}
+
+.select-option svg {
+  flex-shrink: 0;
+  color: var(--color-ink);
 }
 
 /* ────────────────────────── Chips ────────────────────────── */

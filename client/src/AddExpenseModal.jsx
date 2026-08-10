@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import Modal from "./Modal";
+import Select from "./Select";
 
 const CATEGORIES = [
   "Food",
@@ -52,19 +53,12 @@ function AddExpenseModal({ open, onSubmit, onClose }) {
           onChange={(e) => setAmount(e.target.value)}
           required
         />
-        <select
-          className="text-input"
+        <Select
           value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          required
-        >
-          <option value="">Select category</option>
-          {CATEGORIES.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
-          ))}
-        </select>
+          onChange={setCategory}
+          options={CATEGORIES}
+          placeholder="Select category"
+        />
         <input
           type="text"
           placeholder="Note (optional)"
@@ -72,7 +66,11 @@ function AddExpenseModal({ open, onSubmit, onClose }) {
           value={note}
           onChange={(e) => setNote(e.target.value)}
         />
-        <button type="submit" className="btn btn-primary" disabled={submitting}>
+        <button
+          type="submit"
+          className="btn btn-primary"
+          disabled={submitting || !amount || !category}
+        >
           {submitting ? "Adding…" : "Add expense"}
         </button>
       </form>

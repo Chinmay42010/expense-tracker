@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import Modal from "./Modal";
+import Select from "./Select";
 
 const CATEGORIES = [
   "Food",
@@ -60,32 +61,18 @@ function GroupExpenseModal({ open, group, onSubmit, onClose }) {
           onChange={(e) => setAmount(e.target.value)}
           required
         />
-        <select
-          className="text-input"
+        <Select
           value={paidBy}
-          onChange={(e) => setPaidBy(e.target.value)}
-          required
-        >
-          <option value="">Who paid?</option>
-          {group.members.map((m) => (
-            <option key={m} value={m}>
-              {m}
-            </option>
-          ))}
-        </select>
-        <select
-          className="text-input"
+          onChange={setPaidBy}
+          options={group.members}
+          placeholder="Who paid?"
+        />
+        <Select
           value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          required
-        >
-          <option value="">Category</option>
-          {CATEGORIES.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
-          ))}
-        </select>
+          onChange={setCategory}
+          options={CATEGORIES}
+          placeholder="Category"
+        />
         <input
           type="text"
           placeholder="Note (optional)"
@@ -93,7 +80,11 @@ function GroupExpenseModal({ open, group, onSubmit, onClose }) {
           value={note}
           onChange={(e) => setNote(e.target.value)}
         />
-        <button type="submit" className="btn btn-primary" disabled={submitting}>
+        <button
+          type="submit"
+          className="btn btn-primary"
+          disabled={submitting || !amount || !paidBy || !category}
+        >
           {submitting ? "Adding…" : "Add expense"}
         </button>
       </form>
