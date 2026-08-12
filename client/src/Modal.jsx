@@ -1,7 +1,13 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useId, useRef } from "react";
 
 function Modal({ open, title, onClose, children }) {
   const overlayRef = useRef(null);
+  const onCloseRef = useRef(onClose);
+  const titleId = useId();
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     if (open) {
@@ -16,12 +22,50 @@ function Modal({ open, title, onClose, children }) {
 
   useEffect(() => {
     if (!open) return;
+
+    const overlay = overlayRef.current;
+    const previouslyFocused = document.activeElement;
+    const getFocusables = () =>
+      Array.from(
+        overlay.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((el) => !el.disabled);
+
+    if (!overlay.contains(previouslyFocused)) {
+      const focusables = getFocusables();
+      (focusables[0] || overlay)?.focus();
+    }
+
     const onKeyDown = (e) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        onCloseRef.current();
+        return;
+      }
+      if (e.key !== "Tab") return;
+
+      const els = getFocusables();
+      if (els.length === 0) {
+        e.preventDefault();
+        return;
+      }
+      const first = els[0];
+      const last = els[els.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
     };
+
     window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [open, onClose]);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      previouslyFocused?.focus?.();
+    };
+  }, [open]);
 
   if (!open) return null;
 
@@ -31,14 +75,16 @@ function Modal({ open, title, onClose, children }) {
       className="modal-overlay"
       role="dialog"
       aria-modal="true"
-      aria-label={title}
+      aria-labelledby={titleId}
       onMouseDown={(e) => {
         if (e.target === overlayRef.current) onClose();
       }}
     >
       <div className="modal-sheet">
         <div className="modal-sheet-head">
-          <h2 className="display-sm">{title}</h2>
+          <h2 className="display-sm" id={titleId}>
+            {title}
+          </h2>
           <button
             type="button"
             className="modal-close"

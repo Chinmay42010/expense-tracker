@@ -22,6 +22,14 @@ const expenseSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    isRecurring: {
+      type: Boolean,
+      default: false,
+    },
+    recurrence: {
+      type: String, // 'weekly' or 'monthly'
+      default: null,
+    },
   },
   { timestamps: true },
 );

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 function Select({ value, onChange, options, placeholder }) {
   const [open, setOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
   const wrapperRef = useRef(null);
 
   useEffect(() => {
@@ -25,6 +26,50 @@ function Select({ value, onChange, options, placeholder }) {
   const select = (option) => {
     onChange(option);
     setOpen(false);
+    setActiveIndex(-1);
+  };
+
+  const close = () => {
+    setOpen(false);
+    setActiveIndex(-1);
+  };
+
+  const onTriggerKeyDown = (e) => {
+    if (!open) {
+      if (["ArrowDown", "ArrowUp", "Enter", " "].includes(e.key)) {
+        e.preventDefault();
+        setOpen(true);
+        setActiveIndex(e.key === "ArrowUp" ? options.length - 1 : 0);
+      }
+      return;
+    }
+    switch (e.key) {
+      case "ArrowDown":
+        e.preventDefault();
+        setActiveIndex((i) => (i + 1) % options.length);
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        setActiveIndex((i) => (i - 1 + options.length) % options.length);
+        break;
+      case "Home":
+        e.preventDefault();
+        setActiveIndex(0);
+        break;
+      case "End":
+        e.preventDefault();
+        setActiveIndex(options.length - 1);
+        break;
+      case "Enter":
+      case " ":
+        e.preventDefault();
+        if (activeIndex >= 0) select(options[activeIndex]);
+        else setActiveIndex(0);
+        break;
+      case "Escape":
+        close();
+        break;
+    }
   };
 
   return (
@@ -35,6 +80,7 @@ function Select({ value, onChange, options, placeholder }) {
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
+        onKeyDown={onTriggerKeyDown}
       >
         <span className={value ? "" : "select-placeholder"}>
           {value || placeholder}
@@ -55,7 +101,7 @@ function Select({ value, onChange, options, placeholder }) {
       </button>
       {open && (
         <ul className="select-popover" role="listbox">
-          {options.map((option) => (
+          {options.map((option, i) => (
             <li key={option}>
               <button
                 type="button"
@@ -63,7 +109,7 @@ function Select({ value, onChange, options, placeholder }) {
                 aria-selected={option === value}
                 className={`select-option ${
                   option === value ? "selected" : ""
-                }`}
+                } ${i === activeIndex ? "active" : ""}`}
                 onClick={() => select(option)}
               >
                 <span>{option}</span>

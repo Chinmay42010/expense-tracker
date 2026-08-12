@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const Group = require("../models/Group");
+const GroupExpense = require("../models/GroupExpense");
 
 // CREATE a new group
 router.post("/", async (req, res) => {
@@ -33,6 +34,25 @@ router.get("/:id", async (req, res) => {
     res.json(group);
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE a group by id (cascades to its expenses)
+router.delete("/:id", async (req, res) => {
+  try {
+    const group = await Group.findById(req.params.id);
+    if (!group) return res.status(404).json({ error: "Group not found" });
+
+    if (req.body.userId && group.createdBy !== req.body.userId) {
+      return res.status(403).json({ error: "Only the creator can delete this group" });
+    }
+
+    await GroupExpense.deleteMany({ groupId: group._id });
+    await Group.findByIdAndDelete(group._id);
+
+    res.json({ message: "Group deleted" });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
   }
 });
 

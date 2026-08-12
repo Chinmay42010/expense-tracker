@@ -27,6 +27,33 @@ router.get("/", async (req, res) => {
   }
 });
 
+// EXPORT expenses as CSV
+router.get("/export/csv", async (req, res) => {
+  try {
+    const { userId } = req.query;
+    if (!userId) return res.status(400).json({ error: "userId is required" });
+
+    const expenses = await Expense.find({ userId }).sort({ date: -1 });
+
+    const header = "Date,Category,Amount,Note\n";
+    const rows = expenses
+      .map((e) => {
+        const date = new Date(e.date).toLocaleDateString("en-IN");
+        const note = (e.note || "").replace(/,/g, ";");
+        return `${date},${e.category},${e.amount},${note}`;
+      })
+      .join("\n");
+
+    const csv = header + rows;
+
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader("Content-Disposition", "attachment; filename=expenses.csv");
+    res.send(csv);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // UPDATE an expense by id
 router.put("/:id", async (req, res) => {
   try {
@@ -54,6 +81,29 @@ router.delete("/:id", async (req, res) => {
     res.json({ message: "Expense deleted" });
   } catch (err) {
     res.status(400).json({ error: err.message });
+  }
+});
+
+// GET recurring expenses that are due
+router.get("/recurring/due", async (req, res) => {
+  try {
+    const { userId } = req.query;
+    if (!userId) return res.status(400).json({ error: "userId is required" });
+
+    const recurringExpenses = await Expense.find({ userId, isRecurring: true });
+
+    const now = new Date();
+    const due = recurringExpenses.filter((exp) => {
+      const lastDate = new Date(exp.date);
+      const daysSince = (now - lastDate) / (1000 * 60 * 60 * 24);
+      if (exp.recurrence === "weekly") return daysSince >= 7;
+      if (exp.recurrence === "monthly") return daysSince >= 30;
+      return false;
+    });
+
+    res.json(due);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 

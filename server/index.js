@@ -6,6 +6,7 @@ const path = require("path");
 const expenseRoutes = require("./routes/expenses");
 const groupRoutes = require("./routes/groups");
 const groupExpenseRoutes = require("./routes/groupExpenses");
+const budgetRoutes = require("./routes/budgets");
 
 require("dotenv").config({ path: path.join(__dirname, ".env") });
 
@@ -22,6 +23,7 @@ app.get("/", (req, res) => {
 app.use("/api/expenses", expenseRoutes);
 app.use("/api/groups", groupRoutes);
 app.use("/api/group-expenses", groupExpenseRoutes);
+app.use("/api/budgets", budgetRoutes);
 
 mongoose
   .connect(process.env.MONGO_URI)

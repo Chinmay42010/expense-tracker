@@ -1,12 +1,16 @@
 import { useState, useEffect } from "react";
 import api from "./api";
 import { fmtINR, fmtDateTime } from "./format";
+import ConfirmModal from "./ConfirmModal";
 
 function GroupDetail({ group, onBack, reloadKey }) {
   const [expenses, setExpenses] = useState([]);
   const [balances, setBalances] = useState({});
   const [settlements, setSettlements] = useState([]);
   const [deleteError, setDeleteError] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   useEffect(() => {
     fetchGroupExpenses();
@@ -14,21 +18,34 @@ function GroupDetail({ group, onBack, reloadKey }) {
   }, [reloadKey]);
 
   async function fetchGroupExpenses() {
-    const res = await api.get(`/group-expenses/${group._id}`);
-    setExpenses(res.data.expenses);
-    setBalances(res.data.balances);
-    setSettlements(res.data.settlements);
-  };
+    try {
+      setError("");
+      setLoading(true);
+      const res = await api.get(`/group-expenses/${group._id}`);
+      setExpenses(res.data.expenses);
+      setBalances(res.data.balances);
+      setSettlements(res.data.settlements);
+    } catch {
+      setError(
+        "Couldn't load this group's expenses. Try again in a moment.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
 
-  const handleDelete = async (expenseId) => {
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
     try {
       setDeleteError("");
-      await api.delete(`/group-expenses/${group._id}/${expenseId}`);
+      await api.delete(`/group-expenses/${group._id}/${deleteTarget._id}`);
+      setDeleteTarget(null);
       fetchGroupExpenses();
     } catch {
       setDeleteError(
         "Couldn't delete this expense. If it keeps failing, the server may need an update.",
       );
+      setDeleteTarget(null);
     }
   };
 
@@ -54,7 +71,23 @@ function GroupDetail({ group, onBack, reloadKey }) {
           <h2 className="display-sm">Expenses</h2>
         </div>
         {deleteError && <p className="error-text">{deleteError}</p>}
-        {expenses.length === 0 ? (
+        {loading ? (
+          <div className="empty-state">
+            <h3>Loading expenses…</h3>
+          </div>
+        ) : error ? (
+          <div>
+            <p className="error-text">{error}</p>
+            <button
+              type="button"
+              className="btn btn-subtle"
+              style={{ marginTop: "12px" }}
+              onClick={fetchGroupExpenses}
+            >
+              Retry
+            </button>
+          </div>
+        ) : expenses.length === 0 ? (
           <div className="empty-state">
             <h3>No expenses yet</h3>
             <p>Add the first expense to start splitting.</p>
@@ -80,7 +113,7 @@ function GroupDetail({ group, onBack, reloadKey }) {
                     type="button"
                     className="expense-delete"
                     aria-label={`Delete ${exp.note || "expense"}`}
-                    onClick={() => handleDelete(exp._id)}
+                    onClick={() => setDeleteTarget(exp)}
                   >
                     <svg
                       width="16"
@@ -151,6 +184,18 @@ function GroupDetail({ group, onBack, reloadKey }) {
           )}
         </div>
       </section>
+
+      <ConfirmModal
+        open={!!deleteTarget}
+        title="Delete expense?"
+        message={
+          deleteTarget
+            ? `${deleteTarget.note || "Expense"} — ${fmtINR(deleteTarget.amount)}`
+            : ""
+        }
+        onConfirm={confirmDelete}
+        onClose={() => setDeleteTarget(null)}
+      />
     </>
   );
 }
