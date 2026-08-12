@@ -21,6 +21,18 @@ const todayStr = () => {
     .slice(0, 10);
 };
 
+const toTimestamp = (dateStr) => {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const dt = new Date(y, m - 1, d);
+  if (dateStr === todayStr()) {
+    const now = new Date();
+    dt.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), 0);
+  } else {
+    dt.setHours(12, 0, 0, 0);
+  }
+  return dt.toISOString();
+};
+
 function AddExpenseModal({ open, onSubmit, onClose }) {
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState("");
@@ -59,7 +71,7 @@ function AddExpenseModal({ open, onSubmit, onClose }) {
         amount: Number(amount),
         category,
         note,
-        date,
+        date: toTimestamp(date),
         isRecurring,
         recurrence: isRecurring ? recurrence.toLowerCase() : null,
       });
