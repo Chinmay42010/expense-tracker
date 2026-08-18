@@ -16,6 +16,10 @@ A full-stack expense tracking application with group bill-splitting and automati
 - **Settlement algorithm** — automatically calculates net balances and reduces group debts to the minimum number of payments needed to settle up
 - **Custom UI** — dark "ledger" theme built around CSS variables for a distinctive, cohesive look
 
+## Architecture
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for a data-flow diagram showing how the frontend, backend, and database interact.
+
 ## Tech Stack
 
 **Frontend:** React (Vite), Axios, Recharts, Supabase JS client
