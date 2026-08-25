@@ -39,23 +39,29 @@ function SetBudgetModal({ open, onSubmit, onClose }) {
   return (
     <Modal open={open} title="Set a budget" onClose={onClose}>
       <form onSubmit={handleSubmit} className="modal-form">
-        <Select
-          value={category}
-          onChange={setCategory}
-          options={CATEGORIES}
-          placeholder="Select category"
-        />
-        <input
-          ref={limitRef}
-          type="number"
-          min="0"
-          step="1"
-          placeholder="Monthly limit (₹)"
-          className="text-input"
-          value={limit}
-          onChange={(e) => setLimit(e.target.value)}
-          required
-        />
+        <div className="field">
+          <span className="field-label">Category</span>
+          <Select
+            value={category}
+            onChange={setCategory}
+            options={CATEGORIES}
+            placeholder="Select category"
+          />
+        </div>
+        <label className="field">
+          <span className="field-label">Monthly limit</span>
+          <input
+            ref={limitRef}
+            type="number"
+            min="0"
+            step="1"
+            placeholder="₹"
+            className="text-input"
+            value={limit}
+            onChange={(e) => setLimit(e.target.value)}
+            required
+          />
+        </label>
         <button
           type="submit"
           className="btn btn-primary"

@@ -33,23 +33,29 @@ function CreateGroupModal({ open, onSubmit, onClose }) {
   return (
     <Modal open={open} title="Create a group" onClose={onClose}>
       <form onSubmit={handleSubmit} className="modal-form">
-        <input
-          ref={nameRef}
-          type="text"
-          placeholder="Group name"
-          className="text-input"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-        />
-        <input
-          type="text"
-          placeholder="Members — comma separated, e.g. Rahul, Priya"
-          className="text-input"
-          value={membersInput}
-          onChange={(e) => setMembersInput(e.target.value)}
-          required
-        />
+        <label className="field">
+          <span className="field-label">Group name</span>
+          <input
+            ref={nameRef}
+            type="text"
+            placeholder="e.g. Goa trip"
+            className="text-input"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+          />
+        </label>
+        <label className="field">
+          <span className="field-label">Members</span>
+          <input
+            type="text"
+            placeholder="Comma separated, e.g. Rahul, Priya"
+            className="text-input"
+            value={membersInput}
+            onChange={(e) => setMembersInput(e.target.value)}
+            required
+          />
+        </label>
         <button type="submit" className="btn btn-primary" disabled={submitting}>
           {submitting ? "Creating…" : "Create group"}
         </button>

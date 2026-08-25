@@ -21,6 +21,13 @@ const todayStr = () => {
     .slice(0, 10);
 };
 
+const toDateStr = (value) => {
+  const d = new Date(value);
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000)
+    .toISOString()
+    .slice(0, 10);
+};
+
 const toTimestamp = (dateStr) => {
   const [y, m, d] = dateStr.split("-").map(Number);
   const dt = new Date(y, m - 1, d);
@@ -33,13 +40,19 @@ const toTimestamp = (dateStr) => {
   return dt.toISOString();
 };
 
-function AddExpenseModal({ open, onSubmit, onClose }) {
-  const [amount, setAmount] = useState("");
-  const [category, setCategory] = useState("");
-  const [note, setNote] = useState("");
-  const [date, setDate] = useState(todayStr);
-  const [isRecurring, setIsRecurring] = useState(false);
-  const [recurrence, setRecurrence] = useState("");
+function AddExpenseModal({ open, onSubmit, onClose, expense }) {
+  const [amount, setAmount] = useState(expense ? String(expense.amount) : "");
+  const [category, setCategory] = useState(expense?.category ?? "");
+  const [note, setNote] = useState(expense?.note ?? "");
+  const [date, setDate] = useState(() =>
+    expense ? toDateStr(expense.date) : todayStr(),
+  );
+  const [isRecurring, setIsRecurring] = useState(!!expense?.isRecurring);
+  const [recurrence, setRecurrence] = useState(
+    expense?.recurrence
+      ? expense.recurrence[0].toUpperCase() + expense.recurrence.slice(1)
+      : "",
+  );
   const [submitting, setSubmitting] = useState(false);
   const amountRef = useRef(null);
 
@@ -48,20 +61,6 @@ function AddExpenseModal({ open, onSubmit, onClose }) {
   }, [open]);
 
   if (!open) return null;
-
-  const resetForm = () => {
-    setAmount("");
-    setCategory("");
-    setNote("");
-    setDate(todayStr());
-    setIsRecurring(false);
-    setRecurrence("");
-  };
-
-  const handleClose = () => {
-    resetForm();
-    onClose();
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -75,47 +74,63 @@ function AddExpenseModal({ open, onSubmit, onClose }) {
         isRecurring,
         recurrence: isRecurring ? recurrence.toLowerCase() : null,
       });
-      handleClose();
+      onClose();
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <Modal open={open} title="Add an expense" onClose={handleClose}>
+    <Modal
+      open={open}
+      title={expense ? "Edit expense" : "Add an expense"}
+      onClose={onClose}
+    >
       <form onSubmit={handleSubmit} className="modal-form">
-        <input
-          ref={amountRef}
-          type="number"
-          min="0"
-          step="0.01"
-          placeholder="Amount"
-          className="text-input"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          required
-        />
-        <Select
-          value={category}
-          onChange={setCategory}
-          options={CATEGORIES}
-          placeholder="Select category"
-        />
-        <input
-          type="date"
-          aria-label="Date"
-          className="text-input"
-          value={date}
-          max={todayStr()}
-          onChange={(e) => setDate(e.target.value)}
-        />
-        <input
-          type="text"
-          placeholder="Note (optional)"
-          className="text-input"
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-        />
+        <label className="field">
+          <span className="field-label">Amount</span>
+          <input
+            ref={amountRef}
+            type="number"
+            min="0"
+            step="0.01"
+            placeholder="0.00"
+            className="text-input"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            required
+          />
+        </label>
+        <div className="field">
+          <span className="field-label">Category</span>
+          <Select
+            value={category}
+            onChange={setCategory}
+            options={CATEGORIES}
+            placeholder="Select category"
+          />
+        </div>
+        <label className="field">
+          <span className="field-label">Date</span>
+          <input
+            type="date"
+            aria-label="Date"
+            className="text-input"
+            value={date}
+            max={todayStr()}
+            onChange={(e) => setDate(e.target.value)}
+          />
+        </label>
+        <label className="field">
+          <span className="field-label">Note</span>
+          <input
+            type="text"
+            placeholder="Optional"
+            className="text-input"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+          />
+        </label>
         <label className="checkbox-row">
           <input
             type="checkbox"
@@ -128,19 +143,22 @@ function AddExpenseModal({ open, onSubmit, onClose }) {
           <span>Recurring expense</span>
         </label>
         {isRecurring && (
-          <Select
-            value={recurrence}
-            onChange={setRecurrence}
-            options={RECURRENCE_OPTIONS}
-            placeholder="Repeat every…"
-          />
+          <div className="field">
+            <span className="field-label">Repeats every</span>
+            <Select
+              value={recurrence}
+              onChange={setRecurrence}
+              options={RECURRENCE_OPTIONS}
+              placeholder="Select frequency"
+            />
+          </div>
         )}
         <button
           type="submit"
           className="btn btn-primary"
           disabled={submitting || !amount || !category || (isRecurring && !recurrence)}
         >
-          {submitting ? "Adding…" : "Add expense"}
+          {submitting ? "Saving…" : expense ? "Save changes" : "Add expense"}
         </button>
       </form>
     </Modal>

@@ -50,36 +50,48 @@ function GroupExpenseModal({ open, group, onSubmit, onClose }) {
   return (
     <Modal open={open} title={`Add expense · ${group.name}`} onClose={onClose}>
       <form onSubmit={handleSubmit} className="modal-form">
-        <input
-          ref={amountRef}
-          type="number"
-          min="0"
-          step="0.01"
-          placeholder="Amount"
-          className="text-input"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          required
-        />
-        <Select
-          value={paidBy}
-          onChange={setPaidBy}
-          options={group.members}
-          placeholder="Who paid?"
-        />
-        <Select
-          value={category}
-          onChange={setCategory}
-          options={CATEGORIES}
-          placeholder="Category"
-        />
-        <input
-          type="text"
-          placeholder="Note (optional)"
-          className="text-input"
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-        />
+        <label className="field">
+          <span className="field-label">Amount</span>
+          <input
+            ref={amountRef}
+            type="number"
+            min="0"
+            step="0.01"
+            placeholder="0.00"
+            className="text-input"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            required
+          />
+        </label>
+        <div className="field">
+          <span className="field-label">Paid by</span>
+          <Select
+            value={paidBy}
+            onChange={setPaidBy}
+            options={group.members}
+            placeholder="Select member"
+          />
+        </div>
+        <div className="field">
+          <span className="field-label">Category</span>
+          <Select
+            value={category}
+            onChange={setCategory}
+            options={CATEGORIES}
+            placeholder="Select category"
+          />
+        </div>
+        <label className="field">
+          <span className="field-label">Note</span>
+          <input
+            type="text"
+            placeholder="Optional"
+            className="text-input"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+          />
+        </label>
         <button
           type="submit"
           className="btn btn-primary"

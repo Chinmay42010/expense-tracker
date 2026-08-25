@@ -104,22 +104,28 @@ function Budgets({ user, reloadKey }) {
 
       <div className="card" style={{ marginBottom: "16px" }}>
         <form onSubmit={handleSetBudget} className="form-row">
-          <Select
-            value={category}
-            onChange={setCategory}
-            options={CATEGORIES}
-            placeholder="Select category"
-          />
-          <input
-            type="number"
-            min="0"
-            step="1"
-            placeholder="Monthly limit (₹)"
-            className="text-input"
-            value={limit}
-            onChange={(e) => setLimit(e.target.value)}
-            required
-          />
+          <div className="field">
+            <span className="field-label">Category</span>
+            <Select
+              value={category}
+              onChange={setCategory}
+              options={CATEGORIES}
+              placeholder="Select category"
+            />
+          </div>
+          <label className="field">
+            <span className="field-label">Monthly limit</span>
+            <input
+              type="number"
+              min="0"
+              step="1"
+              placeholder="₹"
+              className="text-input"
+              value={limit}
+              onChange={(e) => setLimit(e.target.value)}
+              required
+            />
+          </label>
           <button
             type="submit"
             className="btn btn-primary"

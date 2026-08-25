@@ -687,6 +687,57 @@ input[type="date"]:focus::-webkit-calendar-picker-indicator {
   line-height: 16px;
 }
 
+/* ────────────────────────── Recurring due banner ────────────────────────── */
+
+.due-banner {
+  background: var(--color-ink);
+  color: var(--color-on-primary);
+  border-radius: var(--radius-xl);
+  padding: var(--space-2xl);
+}
+
+.due-banner-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+}
+
+.due-banner h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 28px;
+}
+
+.due-dismiss {
+  background: var(--color-black-elevated);
+  color: var(--color-on-primary);
+}
+
+.due-dismiss:hover {
+  background: var(--color-hairline);
+}
+
+.due-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: var(--space-sm) 0;
+}
+
+.due-note {
+  min-width: 0;
+  font-size: 14px;
+  line-height: 20px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* ────────────────────────── Expense list ────────────────────────── */
 
 .expense-list {
@@ -701,6 +752,12 @@ input[type="date"]:focus::-webkit-calendar-picker-indicator {
   gap: var(--space-md);
   padding: var(--space-lg) 0;
   border-bottom: 1px solid var(--color-canvas-soft);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.expense-item:hover {
+  background: var(--color-canvas-softer);
 }
 
 .expense-item:last-child {
@@ -845,6 +902,46 @@ input[type="date"]:focus::-webkit-calendar-picker-indicator {
   min-width: 2px;
   transform-origin: left center;
   animation: grow-bar 600ms var(--ease-out) backwards;
+}
+
+.chart-budget {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  margin-top: var(--space-sm);
+}
+
+.chart-budget-meta {
+  min-width: 0;
+  color: var(--color-body);
+  font-size: 12px;
+  line-height: 20px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.btn-chip {
+  flex-shrink: 0;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--color-canvas-soft);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 16px;
+  padding: var(--space-sm) var(--space-md);
+  min-height: 32px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn-chip:hover {
+  background: var(--color-surface-pressed);
 }
 
 /* ────────────────────────── Groups ────────────────────────── */
@@ -1093,6 +1190,71 @@ input[type="date"]:focus::-webkit-calendar-picker-indicator {
   line-height: 20px;
 }
 
+/* ────────────────────────── Expense detail ────────────────────────── */
+
+.detail-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-lg) 0;
+}
+
+.detail-amount {
+  font-family: var(--font-display);
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 44px;
+  font-variant-numeric: tabular-nums;
+}
+
+.detail-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.detail-rows li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: var(--space-md) 0;
+  border-bottom: 1px solid var(--color-canvas-soft);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.detail-rows li span {
+  color: var(--color-body);
+}
+
+.detail-rows strong {
+  font-weight: 500;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.detail-note {
+  margin-top: var(--space-lg);
+}
+
+.detail-note p {
+  margin: var(--space-xs) 0 0;
+  font-size: 16px;
+  line-height: 24px;
+}
+
+.detail-actions {
+  display: flex;
+  gap: var(--space-md);
+  margin-top: var(--space-xl);
+}
+
+.detail-actions .btn {
+  flex: 1;
+}
+
 /* ────────────────────────── Modal ────────────────────────── */
 
 .modal-overlay {
@@ -1156,11 +1318,28 @@ input[type="date"]:focus::-webkit-calendar-picker-indicator {
 .modal-form {
   display: flex;
   flex-direction: column;
-  gap: var(--space-md);
+  gap: var(--space-lg);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.field-label {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 16px;
+  color: var(--color-body);
 }
 
 .modal-form .btn-primary {
-  margin-top: var(--space-xs);
+  margin-top: var(--space-sm);
+  width: 100%;
+  min-height: 52px;
+  border-radius: var(--radius-xl);
+  font-size: 18px;
 }
 
 /* ────────────────────────── Form rows ────────────────────────── */
@@ -1426,6 +1605,19 @@ input[type="date"]:focus::-webkit-calendar-picker-indicator {
 
   .expense-item {
     gap: var(--space-sm);
+  }
+
+  .due-banner {
+    padding: var(--space-xl);
+  }
+
+  .due-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .due-row .btn {
+    width: 100%;
   }
 
   .expense-category {

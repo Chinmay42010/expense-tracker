@@ -10,6 +10,7 @@ import AddExpenseModal from "./AddExpenseModal";
 import CreateGroupModal from "./CreateGroupModal";
 import GroupExpenseModal from "./GroupExpenseModal";
 import ConfirmModal from "./ConfirmModal";
+import Modal from "./Modal";
 import SetBudgetModal from "./SetBudgetModal";
 import { fmtINR, fmtDateTime } from "./format";
 import Budgets from "./Budgets";
@@ -66,6 +67,11 @@ function App() {
   const [expensesLoading, setExpensesLoading] = useState(true);
   const [expensesError, setExpensesError] = useState("");
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [detailTarget, setDetailTarget] = useState(null);
+  const [editTarget, setEditTarget] = useState(null);
+  const [dueRecurring, setDueRecurring] = useState([]);
+  const [dueDismissed, setDueDismissed] = useState(false);
+  const [loggingId, setLoggingId] = useState(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -81,7 +87,10 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (user) fetchExpenses();
+    if (user) {
+      fetchExpenses();
+      fetchDueRecurring();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, filterCategory]);
 
@@ -102,6 +111,38 @@ function App() {
       setExpensesLoading(false);
     }
   }
+
+  async function fetchDueRecurring() {
+    try {
+      const res = await api.get(`/expenses/recurring/due?userId=${user.id}`);
+      setDueRecurring(res.data);
+    } catch {
+      setDueRecurring([]);
+    }
+  }
+
+  const logAgain = async (exp) => {
+    setLoggingId(exp._id);
+    try {
+      const now = new Date().toISOString();
+      await api.post("/expenses", {
+        userId: user.id,
+        amount: exp.amount,
+        category: exp.category,
+        note: exp.note,
+        date: now,
+        isRecurring: true,
+        recurrence: exp.recurrence,
+      });
+      // ponytail: bumps the template's date so it leaves the due list; a real
+      // recurrence engine (nextDueAt field + cron) if this ever needs schedules
+      await api.put(`/expenses/${exp._id}`, { date: now });
+      fetchExpenses();
+      fetchDueRecurring();
+    } finally {
+      setLoggingId(null);
+    }
+  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -124,7 +165,12 @@ function App() {
   };
 
   const handleModalSubmit = async (payload) => {
-    await api.post("/expenses", { ...payload, userId: user.id });
+    if (editTarget) {
+      await api.put(`/expenses/${editTarget._id}`, payload);
+      setEditTarget(null);
+    } else {
+      await api.post("/expenses", { ...payload, userId: user.id });
+    }
     fetchExpenses();
   };
 
@@ -290,6 +336,50 @@ function App() {
                 </div>
               </section>
 
+              {!dueDismissed && dueRecurring.length > 0 && (
+                <section className="section">
+                  <div className="due-banner">
+                    <div className="due-banner-head">
+                      <h3>Recurring expenses due</h3>
+                      <button
+                        type="button"
+                        className="expense-delete due-dismiss"
+                        aria-label="Dismiss"
+                        onClick={() => setDueDismissed(true)}
+                      >
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                        >
+                          <path d="M18 6 6 18M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                    {dueRecurring.map((exp) => (
+                      <div key={exp._id} className="due-row">
+                        <span className="due-note">
+                          {exp.note || exp.category} · {fmtINR(exp.amount)} ·{" "}
+                          every {exp.recurrence}
+                        </span>
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          disabled={loggingId === exp._id}
+                          onClick={() => logAgain(exp)}
+                        >
+                          {loggingId === exp._id ? "Logging…" : "Log again"}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+
               <section className="section">
                 <div
                   className="section-head"
@@ -356,7 +446,24 @@ function App() {
                           </span>
                           <ul className="expense-list-inner">
                             {group.items.map((exp) => (
-                              <li key={exp._id} className="expense-item">
+                              <li
+                                key={exp._id}
+                                className="expense-item"
+                                tabIndex={0}
+                                onClick={(e) => {
+                                  if (e.target.closest("button")) return;
+                                  setDetailTarget(exp);
+                                }}
+                                onKeyDown={(e) => {
+                                  if (
+                                    (e.key === "Enter" || e.key === " ") &&
+                                    !e.target.closest("button")
+                                  ) {
+                                    e.preventDefault();
+                                    setDetailTarget(exp);
+                                  }
+                                }}
+                              >
                                 <span className="expense-category">
                                   {exp.category}
                                 </span>
@@ -379,6 +486,29 @@ function App() {
                                 <span className="expense-amount">
                                   {fmtINR(exp.amount)}
                                 </span>
+                                <button
+                                  type="button"
+                                  className="expense-delete"
+                                  aria-label={`Edit ${exp.note || "expense"}`}
+                                  onClick={() => {
+                                    setEditTarget(exp);
+                                    setModalType("expense");
+                                  }}
+                                >
+                                  <svg
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  >
+                                    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                                    <path d="m15 5 4 4" />
+                                  </svg>
+                                </button>
                                 <button
                                   type="button"
                                   className="expense-delete"
@@ -433,11 +563,18 @@ function App() {
         </svg>
       </button>
 
-      <AddExpenseModal
-        open={modalType === "expense"}
-        onSubmit={handleModalSubmit}
-        onClose={() => setModalType(null)}
-      />
+      {modalType === "expense" && (
+        <AddExpenseModal
+          key={editTarget?._id ?? "add"}
+          open
+          expense={editTarget}
+          onSubmit={handleModalSubmit}
+          onClose={() => {
+            setModalType(null);
+            setEditTarget(null);
+          }}
+        />
+      )}
       <CreateGroupModal
         open={modalType === "createGroup"}
         onSubmit={handleCreateGroup}
@@ -454,6 +591,70 @@ function App() {
         onSubmit={handleBudgetSubmit}
         onClose={() => setModalType(null)}
       />
+
+      {detailTarget && (
+        <Modal
+          open
+          title="Expense details"
+          onClose={() => setDetailTarget(null)}
+        >
+          <div className="detail">
+            <div className="detail-hero">
+              <span className="expense-category">
+                {detailTarget.category}
+              </span>
+              <span className="detail-amount">
+                {fmtINR(detailTarget.amount)}
+              </span>
+            </div>
+            <ul className="detail-rows">
+              <li>
+                <span>Date</span>
+                <strong>{fmtDateTime(detailTarget.date)}</strong>
+              </li>
+              {detailTarget.isRecurring && (
+                <li>
+                  <span>Repeats</span>
+                  <strong>Every {detailTarget.recurrence}</strong>
+                </li>
+              )}
+              <li>
+                <span>Added on</span>
+                <strong>{fmtDateTime(detailTarget.createdAt)}</strong>
+              </li>
+            </ul>
+            {detailTarget.note && (
+              <div className="detail-note">
+                <span className="field-label">Note</span>
+                <p>{detailTarget.note}</p>
+              </div>
+            )}
+            <div className="detail-actions">
+              <button
+                type="button"
+                className="btn btn-subtle"
+                onClick={() => {
+                  setEditTarget(detailTarget);
+                  setDetailTarget(null);
+                  setModalType("expense");
+                }}
+              >
+                Edit
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => {
+                  setDeleteTarget(detailTarget);
+                  setDetailTarget(null);
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
 
       <ConfirmModal
         open={!!deleteTarget}

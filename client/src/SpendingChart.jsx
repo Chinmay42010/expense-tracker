@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import api from "./api";
+import { fmtINR } from "./format";
 
 function SpendingChart({ expenses, user }) {
   const [budgets, setBudgets] = useState({}); // { category: { limit, spent, percentUsed, _id } }
@@ -100,20 +101,26 @@ function SpendingChart({ expenses, user }) {
             </div>
 
             {editingCategory === entry.name ? (
-              <div className="form-row" style={{ marginTop: "6px" }}>
+              <form
+                className="form-row"
+                style={{ marginTop: "var(--space-sm)" }}
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleSaveBudget(entry.name);
+                }}
+              >
                 <input
                   type="number"
+                  min="0"
+                  step="1"
                   placeholder="Monthly limit (₹)"
+                  aria-label={`${entry.name} monthly limit`}
                   className="text-input"
                   value={limitInput}
                   onChange={(e) => setLimitInput(e.target.value)}
                   autoFocus
                 />
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={() => handleSaveBudget(entry.name)}
-                >
+                <button type="submit" className="btn btn-primary">
                   Save
                 </button>
                 <button
@@ -123,36 +130,32 @@ function SpendingChart({ expenses, user }) {
                 >
                   Cancel
                 </button>
-              </div>
-            ) : budget ? (
-              <div className="expense-meta" style={{ marginTop: "4px" }}>
-                <span style={{ color: getBudgetColor(budget.percentUsed) }}>
-                  ₹{budget.spent} / ₹{budget.limit} budget ({budget.percentUsed}
-                  %)
-                </span>{" "}
+              </form>
+            ) : (
+              <div className="chart-budget">
+                <span className="chart-budget-meta">
+                  {budget ? (
+                    <>
+                      {fmtINR(budget.spent)} of {fmtINR(budget.limit)} ·{" "}
+                      <span style={{ color: getBudgetColor(budget.percentUsed) }}>
+                        {budget.percentUsed}% used
+                      </span>
+                    </>
+                  ) : (
+                    "No monthly limit"
+                  )}
+                </span>
                 <button
                   type="button"
-                  className="link-btn"
+                  className="btn-chip"
                   onClick={() => {
                     setEditingCategory(entry.name);
-                    setLimitInput(String(budget.limit));
+                    setLimitInput(budget ? String(budget.limit) : "");
                   }}
                 >
-                  edit
+                  {budget ? "Edit" : "Set budget"}
                 </button>
               </div>
-            ) : (
-              <button
-                type="button"
-                className="link-btn"
-                style={{ marginTop: "4px" }}
-                onClick={() => {
-                  setEditingCategory(entry.name);
-                  setLimitInput("");
-                }}
-              >
-                + set budget
-              </button>
             )}
           </div>
         );
