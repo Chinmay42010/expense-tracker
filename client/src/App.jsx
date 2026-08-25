@@ -307,10 +307,6 @@ function App() {
           ) : (
             <>
               <section className="hero-band">
-                <h1 className="display-xl">Your money, at a glance</h1>
-                <p className="hero-sub">
-                  Everything you've spent, in one place.
-                </p>
                 <div className="stat-row stagger">
                   <div className="stat-card stat-card-dark">
                     <span className="stat-label">Total spent</span>
@@ -475,6 +471,14 @@ function App() {
                                     ↻ {exp.recurrence}
                                   </span>
                                 )}
+                                {exp.isGroupExpense && (
+                                  <span
+                                    className="expense-group-tag"
+                                    title={`Your share of a ${exp.groupName} group expense`}
+                                  >
+                                    {exp.groupName}
+                                  </span>
+                                )}
                                 <div className="expense-mid">
                                   <span className="expense-note">
                                     {exp.note || "Expense"}
@@ -612,16 +616,24 @@ function App() {
                 <span>Date</span>
                 <strong>{fmtDateTime(detailTarget.date)}</strong>
               </li>
+              {detailTarget.isGroupExpense && (
+                <li>
+                  <span>Group</span>
+                  <strong>{detailTarget.groupName}</strong>
+                </li>
+              )}
               {detailTarget.isRecurring && (
                 <li>
                   <span>Repeats</span>
                   <strong>Every {detailTarget.recurrence}</strong>
                 </li>
               )}
-              <li>
-                <span>Added on</span>
-                <strong>{fmtDateTime(detailTarget.createdAt)}</strong>
-              </li>
+              {!detailTarget.isGroupExpense && (
+                <li>
+                  <span>Added on</span>
+                  <strong>{fmtDateTime(detailTarget.createdAt)}</strong>
+                </li>
+              )}
             </ul>
             {detailTarget.note && (
               <div className="detail-note">
@@ -629,29 +641,35 @@ function App() {
                 <p>{detailTarget.note}</p>
               </div>
             )}
-            <div className="detail-actions">
-              <button
-                type="button"
-                className="btn btn-subtle"
-                onClick={() => {
-                  setEditTarget(detailTarget);
-                  setDetailTarget(null);
-                  setModalType("expense");
-                }}
-              >
-                Edit
-              </button>
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={() => {
-                  setDeleteTarget(detailTarget);
-                  setDetailTarget(null);
-                }}
-              >
-                Delete
-              </button>
-            </div>
+            {detailTarget.isGroupExpense ? (
+              <p className="muted" style={{ marginTop: "var(--space-xl)" }}>
+                Your share of a group expense — manage it in the Groups tab.
+              </p>
+            ) : (
+              <div className="detail-actions">
+                <button
+                  type="button"
+                  className="btn btn-subtle"
+                  onClick={() => {
+                    setEditTarget(detailTarget);
+                    setDetailTarget(null);
+                    setModalType("expense");
+                  }}
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => {
+                    setDeleteTarget(detailTarget);
+                    setDetailTarget(null);
+                  }}
+                >
+                  Delete
+                </button>
+              </div>
+            )}
           </div>
         </Modal>
       )}

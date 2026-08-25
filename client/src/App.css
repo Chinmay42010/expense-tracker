@@ -944,6 +944,18 @@ input[type="date"]:focus::-webkit-calendar-picker-indicator {
   background: var(--color-surface-pressed);
 }
 
+.btn-chip-quiet {
+  background: transparent;
+  color: var(--color-body);
+  padding: var(--space-sm) 0;
+  min-height: auto;
+}
+
+.btn-chip-quiet:hover {
+  background: var(--color-canvas-softer);
+  color: var(--color-ink);
+}
+
 /* ────────────────────────── Groups ────────────────────────── */
 
 .group-list {
@@ -1200,6 +1212,19 @@ input[type="date"]:focus::-webkit-calendar-picker-indicator {
   padding: var(--space-lg) 0;
 }
 
+.detail-sub {
+  color: var(--color-body);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.detail-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  margin-top: var(--space-xs);
+}
+
 .detail-amount {
   font-family: var(--font-display);
   font-size: 36px;
@@ -1413,6 +1438,23 @@ input[type="date"]:focus::-webkit-calendar-picker-indicator {
   line-height: 16px;
   text-transform: capitalize;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.expense-group-tag {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: var(--color-ink);
+  color: var(--color-on-primary);
+  border-radius: var(--radius-pill);
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 16px;
   white-space: nowrap;
 }
 

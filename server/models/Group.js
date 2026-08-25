@@ -16,6 +16,10 @@ const groupSchema = new mongoose.Schema(
       type: String, // Supabase user ID of the creator
       required: true,
     },
+    hostName: {
+      type: String, // the creator's member name inside this group
+      default: "",
+    },
   },
   { timestamps: true },
 );

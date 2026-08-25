@@ -6,7 +6,12 @@ const GroupExpense = require("../models/GroupExpense");
 // CREATE a new group
 router.post("/", async (req, res) => {
   try {
-    const group = new Group(req.body);
+    const { hostName, members, ...rest } = req.body;
+    const memberList = Array.isArray(members) ? [...members] : [];
+    if (hostName && !memberList.includes(hostName)) {
+      memberList.push(hostName);
+    }
+    const group = new Group({ ...rest, members: memberList, hostName: hostName || "" });
     const savedGroup = await group.save();
     res.status(201).json(savedGroup);
   } catch (err) {

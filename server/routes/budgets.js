@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const Budget = require("../models/Budget");
 const Expense = require("../models/Expense");
+const { getGroupShares } = require("../utils/groupShares");
 
 // CREATE or UPDATE a budget (upsert by userId + category)
 router.post("/", async (req, res) => {
@@ -47,6 +48,7 @@ router.get("/", async (req, res) => {
     const budgets = await Budget.find({ userId });
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const shares = await getGroupShares(userId);
 
     const result = await Promise.all(
       budgets.map(async (budget) => {
@@ -59,7 +61,15 @@ router.get("/", async (req, res) => {
         }
 
         const expenses = await Expense.find(filter);
-        const spent = expenses.reduce((sum, e) => sum + e.amount, 0);
+        const spent =
+          expenses.reduce((sum, e) => sum + e.amount, 0) +
+          shares
+            .filter(
+              (s) =>
+                new Date(s.date) >= startOfMonth &&
+                (budget.category === "Overall" || s.category === budget.category),
+            )
+            .reduce((sum, s) => sum + s.amount, 0);
         const percentUsed =
           budget.limit > 0 ? Math.round((spent / budget.limit) * 100) : 0;
 

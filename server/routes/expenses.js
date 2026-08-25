@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const Expense = require("../models/Expense");
+const { getGroupShares } = require("../utils/groupShares");
 
 // CREATE a new expense
 router.post("/", async (req, res) => {
@@ -13,7 +14,7 @@ router.post("/", async (req, res) => {
   }
 });
 
-// READ all expenses (filtered by user)
+// READ all expenses (filtered by user), including the host's shares of group expenses
 router.get("/", async (req, res) => {
   try {
     const { userId, category } = req.query;
@@ -21,7 +22,13 @@ router.get("/", async (req, res) => {
     if (userId) filter.userId = userId;
     if (category) filter.category = category;
     const expenses = await Expense.find(filter).sort({ date: -1 });
-    res.json(expenses);
+
+    let shares = await getGroupShares(userId);
+    if (category) shares = shares.filter((s) => s.category === category);
+
+    res.json(
+      [...expenses, ...shares].sort((a, b) => new Date(b.date) - new Date(a.date)),
+    );
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -33,14 +40,18 @@ router.get("/export/csv", async (req, res) => {
     const { userId } = req.query;
     if (!userId) return res.status(400).json({ error: "userId is required" });
 
-    const expenses = await Expense.find({ userId }).sort({ date: -1 });
+    const personal = await Expense.find({ userId }).sort({ date: -1 });
+    const shares = await getGroupShares(userId);
+    const all = [...personal, ...shares].sort(
+      (a, b) => new Date(b.date) - new Date(a.date),
+    );
 
-    const header = "Date,Category,Amount,Note\n";
-    const rows = expenses
+    const header = "Date,Category,Amount,Note,Group\n";
+    const rows = all
       .map((e) => {
         const date = new Date(e.date).toLocaleDateString("en-IN");
         const note = (e.note || "").replace(/,/g, ";");
-        return `${date},${e.category},${e.amount},${note}`;
+        return `${date},${e.category},${e.amount},${note},${e.groupName || ""}`;
       })
       .join("\n");
 

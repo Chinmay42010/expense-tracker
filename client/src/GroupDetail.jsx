@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import api from "./api";
 import { fmtINR, fmtDateTime } from "./format";
 import ConfirmModal from "./ConfirmModal";
+import Modal from "./Modal";
 
 function GroupDetail({ group, onBack, reloadKey }) {
   const [expenses, setExpenses] = useState([]);
@@ -11,6 +12,7 @@ function GroupDetail({ group, onBack, reloadKey }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [detailTarget, setDetailTarget] = useState(null);
 
   useEffect(() => {
     fetchGroupExpenses();
@@ -96,7 +98,24 @@ function GroupDetail({ group, onBack, reloadKey }) {
           <div className="card">
             <ul className="expense-list">
               {expenses.map((exp) => (
-                <li key={exp._id} className="expense-item">
+                <li
+                  key={exp._id}
+                  className="expense-item"
+                  tabIndex={0}
+                  onClick={(e) => {
+                    if (e.target.closest("button")) return;
+                    setDetailTarget(exp);
+                  }}
+                  onKeyDown={(e) => {
+                    if (
+                      (e.key === "Enter" || e.key === " ") &&
+                      !e.target.closest("button")
+                    ) {
+                      e.preventDefault();
+                      setDetailTarget(exp);
+                    }
+                  }}
+                >
                   <span className="expense-category">{exp.category}</span>
                   <div className="expense-mid">
                     <span className="expense-note">
@@ -139,51 +158,116 @@ function GroupDetail({ group, onBack, reloadKey }) {
 
       <section className="section">
         <div className="section-head">
-          <h2 className="display-sm">Balances</h2>
-        </div>
-        <div className="card-dark stagger">
-          {Object.keys(balances).length === 0 ? (
-            <p className="on-dark-sub">No balances yet.</p>
-          ) : (
-            Object.entries(balances).map(([person, amt]) => (
-              <div key={person} className="balance-row">
-                <span className="balance-name">{person}</span>
-                <span
-                  className={`balance-pill ${
-                    amt >= 0 ? "balance-pill-gets" : "balance-pill-owes"
-                  }`}
-                >
-                  {amt >= 0
-                    ? `gets ₹${amt.toFixed(2)}`
-                    : `owes ₹${Math.abs(amt).toFixed(2)}`}
-                </span>
-              </div>
-            ))
-          )}
-        </div>
-      </section>
-
-      <section className="section">
-        <div className="section-head">
           <h2 className="display-sm">Settle up</h2>
         </div>
-        <div className="card-soft stagger">
-          {settlements.length === 0 ? (
-            <p className="muted">All settled up.</p>
-          ) : (
-            settlements.map((s, i) => (
-              <div key={i} className="settlement-row">
-                <span className="settlement-person">{s.from}</span>
-                <span className="settlement-arrow" aria-hidden="true">
-                  →
-                </span>
-                <span className="settlement-person">{s.to}</span>
-                <span className="settlement-amount">₹{s.amount}</span>
+        {Object.keys(balances).length === 0 ||
+        Object.values(balances).every((amt) => Math.abs(amt) < 0.01) ? (
+          <div className="card-soft stagger">
+            <p className="muted" style={{ margin: 0 }}>
+              All settled up — nobody owes anybody.
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="card-dark stagger">
+              {Object.entries(balances).map(([person, amt]) => (
+                <div key={person} className="balance-row">
+                  <span className="balance-name">{person}</span>
+                  <span
+                    className={`balance-pill ${
+                      amt >= 0 ? "balance-pill-gets" : "balance-pill-owes"
+                    }`}
+                  >
+                    {amt >= 0
+                      ? `gets ₹${amt.toFixed(2)}`
+                      : `owes ₹${Math.abs(amt).toFixed(2)}`}
+                  </span>
+                </div>
+              ))}
+            </div>
+            {settlements.length > 0 && (
+              <div className="card-soft stagger" style={{ marginTop: "var(--space-lg)" }}>
+                {settlements.map((s, i) => (
+                  <div key={i} className="settlement-row">
+                    <span className="settlement-person">{s.from}</span>
+                    <span className="settlement-arrow" aria-hidden="true">
+                      →
+                    </span>
+                    <span className="settlement-person">{s.to}</span>
+                    <span className="settlement-amount">{fmtINR(s.amount)}</span>
+                  </div>
+                ))}
               </div>
-            ))
-          )}
-        </div>
+            )}
+          </>
+        )}
       </section>
+
+      {detailTarget && (
+        <Modal
+          open
+          title="Expense details"
+          onClose={() => setDetailTarget(null)}
+        >
+          <div className="detail">
+            <div className="detail-hero">
+              <span className="expense-category">{detailTarget.category}</span>
+              <span className="detail-amount">
+                {fmtINR(detailTarget.amount)}
+              </span>
+              <span className="detail-sub">
+                Paid by {detailTarget.paidBy}
+              </span>
+            </div>
+            <ul className="detail-rows">
+              <li>
+                <span>Added on</span>
+                <strong>{fmtDateTime(detailTarget.createdAt)}</strong>
+              </li>
+              <li>
+                <span>Split between</span>
+                <strong>{detailTarget.splitBetween.length} people</strong>
+              </li>
+              <li>
+                <span>Share each</span>
+                <strong>
+                  {fmtINR(detailTarget.amount / detailTarget.splitBetween.length)}
+                </strong>
+              </li>
+            </ul>
+            {detailTarget.splitBetween.length > 0 && (
+              <div className="detail-note">
+                <span className="field-label">Members</span>
+                <div className="detail-chips">
+                  {detailTarget.splitBetween.map((m) => (
+                    <span key={m} className="mini-chip">
+                      {m}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {detailTarget.note && (
+              <div className="detail-note">
+                <span className="field-label">Note</span>
+                <p>{detailTarget.note}</p>
+              </div>
+            )}
+            <div className="detail-actions">
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => {
+                  setDeleteTarget(detailTarget);
+                  setDetailTarget(null);
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
 
       <ConfirmModal
         open={!!deleteTarget}

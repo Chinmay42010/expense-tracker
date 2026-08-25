@@ -133,27 +133,23 @@ function SpendingChart({ expenses, user }) {
               </form>
             ) : (
               <div className="chart-budget">
-                <span className="chart-budget-meta">
-                  {budget ? (
-                    <>
-                      {fmtINR(budget.spent)} of {fmtINR(budget.limit)} ·{" "}
-                      <span style={{ color: getBudgetColor(budget.percentUsed) }}>
-                        {budget.percentUsed}% used
-                      </span>
-                    </>
-                  ) : (
-                    "No monthly limit"
-                  )}
-                </span>
+                {budget && (
+                  <span className="chart-budget-meta">
+                    {fmtINR(budget.spent)} of {fmtINR(budget.limit)} ·{" "}
+                    <span style={{ color: getBudgetColor(budget.percentUsed) }}>
+                      {budget.percentUsed}% used
+                    </span>
+                  </span>
+                )}
                 <button
                   type="button"
-                  className="btn-chip"
+                  className={`btn-chip ${budget ? "" : "btn-chip-quiet"}`}
                   onClick={() => {
                     setEditingCategory(entry.name);
                     setLimitInput(budget ? String(budget.limit) : "");
                   }}
                 >
-                  {budget ? "Edit" : "Set budget"}
+                  {budget ? "Edit" : "+ Set budget"}
                 </button>
               </div>
             )}

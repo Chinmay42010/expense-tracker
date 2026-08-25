@@ -3,6 +3,7 @@ import Modal from "./Modal";
 
 function CreateGroupModal({ open, onSubmit, onClose }) {
   const [name, setName] = useState("");
+  const [hostName, setHostName] = useState("");
   const [membersInput, setMembersInput] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const nameRef = useRef(null);
@@ -21,8 +22,9 @@ function CreateGroupModal({ open, onSubmit, onClose }) {
       .filter(Boolean);
     setSubmitting(true);
     try {
-      await onSubmit({ name, members });
+      await onSubmit({ name, hostName: hostName.trim(), members });
       setName("");
+      setHostName("");
       setMembersInput("");
       onClose();
     } finally {
@@ -46,6 +48,17 @@ function CreateGroupModal({ open, onSubmit, onClose }) {
           />
         </label>
         <label className="field">
+          <span className="field-label">Your name in this group</span>
+          <input
+            type="text"
+            placeholder="e.g. Chinmay"
+            className="text-input"
+            value={hostName}
+            onChange={(e) => setHostName(e.target.value)}
+            required
+          />
+        </label>
+        <label className="field">
           <span className="field-label">Members</span>
           <input
             type="text"
@@ -53,7 +66,6 @@ function CreateGroupModal({ open, onSubmit, onClose }) {
             className="text-input"
             value={membersInput}
             onChange={(e) => setMembersInput(e.target.value)}
-            required
           />
         </label>
         <button type="submit" className="btn btn-primary" disabled={submitting}>
